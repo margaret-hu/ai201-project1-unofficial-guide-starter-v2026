@@ -34,15 +34,6 @@ I first tried overlap=100, but that backfired: two documents (516 and 549 charac
 
 ## Sample Chunks
 
-<!-- Five chunks, pasted as text. Label each one and name the file it came from
-     AND the function that produced it — the grader checks your code against
-     what you claim here.
-
-     `python app.py chunks -n 5` prints all three for you. Copy them straight
-     across.
-
-     Milestone 3. -->
-
 **Chunk 1** — source: `admin_add_drop_deadline.txt#0` — produced by: `chunker.py::fallback_split`
 
 ```
@@ -129,15 +120,6 @@ I ran `python app.py retrieve "..."` for my five in-corpus questions and the fiv
 | How do I write a for loop in Rust? | no | 0.896 |
 
 ## How I Used AI
-
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
-
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
 
 **1.** I asked Claude to self-check my five `criteria.md` targets for being numeric, corpus-grounded, and measurable twice. It found criterion 3's "why" was still an unfilled placeholder, and flagged criteria 1 and 5 as relying on subjective judgment calls worth watching later. I filled in criterion 3's "why" with the actual gap between my in-corpus and out-of-scope distances.
 
