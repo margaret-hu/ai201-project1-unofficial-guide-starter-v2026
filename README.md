@@ -21,11 +21,7 @@ Margaret Hu — campus_life corpus
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+A retrieval-augmented Q&A system over `campus_life`, 88 short student-life posts on dining halls, dorms, courses, and administrative rules like add/drop deadlines and the housing lottery. It embeds and retrieves the closest chunks for a question, then answers from only that material, citing the source. A relevance gate refuses questions the corpus doesn't cover instead of guessing. It answers specific, factual questions ("How late can I declare pass/fail?"), not vague ones ("What are good dining halls?").
 
 ## Chunking Strategy
 
@@ -143,9 +139,9 @@ I ran `python app.py retrieve "..."` for my five in-corpus questions and the fiv
 
      Milestone 5. -->
 
-**1.**
+**1.** I asked Claude to self-check my five `criteria.md` targets for being numeric, corpus-grounded, and measurable twice. It found criterion 3's "why" was still an unfilled placeholder, and flagged criteria 1 and 5 as relying on subjective judgment calls worth watching later. I filled in criterion 3's "why" with the actual gap between my in-corpus and out-of-scope distances.
 
-**2.**
+**2.** I asked Claude to run `app.py chunks` and check whether each chunk could answer a question standalone. The 5-chunk sample looked fine, but it dug further and found `CHUNK_OVERLAP=100` was producing 16–48 character orphan fragments from two documents — under my own 150-char floor — because `fallback_split` doesn't stop once a window already covers the whole document. I set `CHUNK_OVERLAP = 0` instead of patching the function.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never

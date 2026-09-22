@@ -45,8 +45,7 @@ When I ask a question my documents clearly don't cover, the relevance gate stops
      just keep five of them, or the "4 of 5" above has nothing to be 4 of. -->
 
 **Why this target:**
-<!-- What did your distances look like when you set the cutoff in Milestone 4?
-     Was there a clean gap, or did the two groups overlap? -->
+In-corpus questions topped out at a 0.439 best distance and out-of-scope questions bottomed out at 0.825 — a wide, clean gap — so I set the cutoff at the midpoint, 0.63. With that much margin on both sides, I expect the gate to hold on 4 of 5.
 
 ---
 
