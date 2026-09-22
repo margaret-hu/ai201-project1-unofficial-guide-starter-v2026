@@ -103,30 +103,34 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
 
 ## Sample Answer
 
-<!-- One complete question and answer, pasted as text, with the source line
-     visible. Milestone 4. -->
-
-**Question:**
+**Question:** Can I change my meal plan tier after the semester starts?
 
 **Answer:**
 
 ```
+  (best distance 0.165, cutoff 0.63)
+
+Yes, you can change your meal plan tier once, but only in the first ten days of the semester. After that, it is locked (admin_meal_plan_changes.txt).
+
+Sources retrieved: admin_dining_dollars.txt, admin_meal_plan_changes.txt, dining_north_kitchen_followup.txt, dining_verrill_street_grill.txt, money_jobs.txt
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** 0.63
 
-<!-- The number you set in config.py, and how you got there.
-
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+I ran `python app.py retrieve "..."` for my five in-corpus questions and the five `OUT_OF_SCOPE` questions and recorded the best (lowest) distance for each. The in-corpus group topped out at 0.439; the out-of-scope group bottomed out at 0.825 — a wide, clean gap with nothing in between. I set the cutoff at the midpoint, 0.63, so it isn't hugging either edge.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| How late in the semester can I declare a pass/fail course? | yes | 0.204 |
+| Does the library stay open later during term or during reading week? | yes | 0.439 |
+| Is there a waitlist for parking permits if I miss the sale window? | yes | 0.366 |
+| Can I change my meal plan tier after the semester starts? | yes | 0.165 |
+| Does taking summer courses for extra credit hours get me a better housing lottery number? | yes | 0.388 |
+| What is the capital of Mongolia? | no | 0.825 |
+| How do I change the oil in a diesel engine? | no | 0.934 |
+| Who won the 1994 World Cup? | no | 0.886 |
+| What is the recommended dosage of ibuprofen for a headache? | no | 0.844 |
+| How do I write a for loop in Rust? | no | 0.896 |
 
 ## How I Used AI
 
