@@ -19,12 +19,10 @@ pipeline earns credit; *"80% seemed reasonable"* does not.
 
 ## 1. Retrieved chunks contain the answer
 
-For at least 4 of my 5 test questions, the retrieved chunks include one that
-contains the answer.
+For at least 4 of my 5 test questions, the retrieved chunks include one that contains the answer.
 
 **Why this target:**
-<!-- e.g. "One of my questions is about a topic only two documents mention, so
-     I expect that one to be hard." -->
+My question about whether summer courses improve your housing lottery number touches a topic only two documents mention (`admin_housing_lottery.txt` and `advising_registration.txt`), so I expect that one to be harder to retrieve correctly than the other four.
 
 ---
 
@@ -33,16 +31,13 @@ contains the answer.
 Every answer the system produces names at least one source document.
 
 **Why this target:**
-<!-- Why all five and not four? What about your setup makes that achievable —
-     or what would have to go wrong for it not to be? -->
+Attribution is deterministic, not fuzzy retrieval — the pipeline either points to the right file or it doesn't. A miss would mean a bug in the attachment logic, not a content-matching shortfall, so I expect this to hold every time.
 
 ---
 
 ## 3. The relevance gate stops out-of-corpus questions
 
-When I ask a question my documents clearly don't cover, the relevance gate
-stops it and the system returns "I don't have enough information about that" —
-in at least 4 of 5 tries.
+When I ask a question my documents clearly don't cover, the relevance gate stops it and the system returns "I don't have enough information about that" — in at least 4 of 5 tries.
 
 <!-- The five questions are the ones in `OUT_OF_SCOPE` at the bottom of
      `questions.py`, and `run_eval.py` puts them through the gate and writes
@@ -57,41 +52,19 @@ in at least 4 of 5 tries.
 
 ## 4. Something about your chunks
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know if your chunks were the right size? Name something
-     countable or observable.
-
-     Examples of the right shape — don't copy these, they should come from
-     what you actually saw in Milestone 3:
-       - "At least 4 of 5 sampled chunks read as a complete thought, with no
-          sentence cut in half at either end."
-       - "No chunk is shorter than 200 characters, since anything below that
-          in my corpus turned out to be a heading with no content under it." -->
-
-
+No chunk, across all chunks in my corpus, is under 150 or over 600 characters.
 
 **Why this target:**
-
-
+My chunks average 317 characters, ranging from 178 to 549. A 150–600 band leaves headroom on both ends to catch a chunking bug — a stray fragment or two merged sections — without flagging normal length variation.
 
 ---
 
 ## 5. Your choice
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. It could be about
-     speed, about refusals, about a particular kind of question your corpus
-     handles badly, about source attribution being correct rather than merely
-     present — anything, as long as it names a number or an observable
-     outcome. -->
-
-
+Every answer the system produces must be supported by the retrieved chunks and must not include unsupported information.
 
 **Why this target:**
-
-
+A fabricated detail is worse than an admitted miss, since it looks just as authoritative as a correct answer — that's why this criterion gets zero slack instead of the 4-of-5 I gave the others.
 
 ---
 
