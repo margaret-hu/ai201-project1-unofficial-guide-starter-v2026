@@ -152,11 +152,62 @@ I ran `python app.py retrieve "..."` for my five in-corpus questions and the fiv
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. No chunk under 150 or over 600 characters | 0 of 88 | 0 of 88 | 0 of 88 | 0 of 88 | MET |
+| 5. Every answer supported, nothing unsupported | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+
+Produced by `run_eval.py::main` and `run_eval.py::check_out_of_scope`; raw
+output in `results/run_2026-09-26_2319_before.md`. Retrieval and the gate are
+deterministic, so criterion 1's sources retrieved and criterion 3's gate
+outcome don't vary run to run — only the generated wording does. Criterion 4
+is likewise deterministic — chunking doesn't change run to run — so the same
+number repeats across all three columns.
+
+**Criterion 1** — every question's retrieved set includes the file that
+answers it:
+
+```
+### How late in the semester can I declare a pass/fail course? — run 1
+Sources retrieved: admin_add_drop_deadline.txt, admin_declaring_a_major.txt, admin_graduation_requirements.txt, admin_pass_fail_option.txt, course_cs_340.txt
+```
+
+**Criterion 2** — every answer cites a source, e.g.:
+
+```
+You can declare a course pass/fail as late as week eight.
+
+Source: admin_pass_fail_option.txt
+```
+
+**Criterion 3** — the gate on `OUT_OF_SCOPE`, one deterministic pass:
+
+```
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.825 | refused |
+| How do I change the oil in a diesel engine? | 0.934 | refused |
+| Who won the 1994 World Cup? | 0.886 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.844 | refused |
+| How do I write a for loop in Rust? | 0.896 | refused |
+```
+
+**Criterion 4** — `chunker.py::describe`, printed by `python app.py index`:
+
+```
+chunked  88 chunks, 317 characters on average (shortest 178, longest 549), produced by chunker.py::fallback_split
+```
+
+**Criterion 5** — read against the retrieved-chunk text in
+`results/run_2026-09-26_2319_before.md`; all 15 answers (5 questions × 3
+runs) stay within what their cited source says. Example:
+
+```
+Yes, you can change your meal plan tier once, but only in the first ten days of the semester. After that, it is locked.
+
+Source: admin_meal_plan_changes.txt
+```
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
