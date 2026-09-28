@@ -252,6 +252,17 @@ Source: admin_meal_plan_changes.txt
 
      Milestone 3. -->
 
+Nothing missed — all five hit their numbers in all three runs.
+
+Criterion 1 was looser than it looked, though: the housing-lottery
+question only passed because the generator inferred a negation
+("no, ... but juniors/seniors are ordered by credit hours") that
+`admin_housing_lottery.txt` never states — it attaches "number" only to
+the random draw for sophomores. Retrieval was fine (same chunk, every
+run, distance 0.3875); the criterion just couldn't distinguish "states
+this" from "implies this." Tightened in criteria.md — under that
+reading, this is the one genuine 4-of-5 case in the set.
+
 ## The Improvement
 
 **What I changed:**

@@ -24,6 +24,17 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that con
 **Why this target:**
 My question about whether summer courses improve your housing lottery number touches a topic only two documents mention (`admin_housing_lottery.txt` and `advising_registration.txt`), so I expect that one to be harder to retrieve correctly than the other four.
 
+> **Revised in unit 2:** For at least 4 of 5 questions, the retrieved chunks
+> include one that states the answer directly — quotable as-is, not
+> inferred by combining or negating facts.
+>
+> **Why revised:** Four questions have a chunk that states the answer
+> outright. The fifth (housing lottery) doesn't: `admin_housing_lottery.txt`
+> never says "no" and never attaches "number" to juniors/seniors, only to
+> the random draw for sophomores — my system's negation is the generator's
+> inference, not a sentence in the chunk. "Contains the answer" couldn't
+> tell those two cases apart, so I made it mean directly quotable.
+
 ---
 
 ## 2. Every answer names a source
