@@ -226,11 +226,11 @@ Source: admin_meal_plan_changes.txt
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunk contains the answer | MET | This one takes a judgment call — I checked whether the retrieved set for each question included a chunk that stated the answer outright. All five did, in all three runs, comfortably past the 4-of-5 target. |
+| 2 | Every answer names a source | MET | Attribution is mechanical, not judged — the run log either shows a source or it doesn't. It showed one every time: 5 of 5 across all three runs. |
+| 3 | Gate stops out-of-corpus questions | MET | The gate's pass/refuse call is deterministic once the cutoff is set, so I read it straight off the run log: all five out-of-scope questions were refused, clearing the 4-of-5 target. |
+| 4 | No chunk under 150 or over 600 characters | MET | Chunk lengths are fixed by the chunker, not by the run, so this is one measurement repeated three times, not three independent checks: 0 of 88 out of band. |
+| 5 | Every answer supported, nothing unsupported | MET | This one needed a judgment call — I read all 15 answers (5 questions × 3 runs) against their cited source's text and found nothing that wasn't there. |
 
 ## Diagnoses
 
