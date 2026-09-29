@@ -158,15 +158,9 @@ I ran `python app.py retrieve "..."` for my five in-corpus questions and the fiv
 | 4. No chunk under 150 or over 600 characters | 0 of 88 | 0 of 88 | 0 of 88 | 0 of 88 | MET |
 | 5. Every answer supported, nothing unsupported | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
 
-Produced by `run_eval.py::main` and `run_eval.py::check_out_of_scope`; raw
-output in `results/run_2026-09-26_2319_before.md`. Retrieval and the gate are
-deterministic, so criterion 1's sources retrieved and criterion 3's gate
-outcome don't vary run to run — only the generated wording does. Criterion 4
-is likewise deterministic — chunking doesn't change run to run — so the same
-number repeats across all three columns.
+Produced by `run_eval.py::main` and `run_eval.py::check_out_of_scope`; raw output in `results/run_2026-09-26_2319_before.md`. Retrieval and the gate are deterministic, so criterion 1's sources retrieved and criterion 3's gate outcome don't vary run to run — only the generated wording does. Criterion 4 is likewise deterministic — chunking doesn't change run to run — so the same number repeats across all three columns.
 
-**Criterion 1** — every question's retrieved set includes the file that
-answers it:
+**Criterion 1** — every question's retrieved set includes the file that answers it:
 
 ```
 ### How late in the semester can I declare a pass/fail course? — run 1
@@ -199,9 +193,7 @@ Source: admin_pass_fail_option.txt
 chunked  88 chunks, 317 characters on average (shortest 178, longest 549), produced by chunker.py::fallback_split
 ```
 
-**Criterion 5** — read against the retrieved-chunk text in
-`results/run_2026-09-26_2319_before.md`; all 15 answers (5 questions × 3
-runs) stay within what their cited source says. Example:
+**Criterion 5** — read against the retrieved-chunk text in `results/run_2026-09-26_2319_before.md`; all 15 answers (5 questions × 3 runs) stay within what their cited source says. Example:
 
 ```
 Yes, you can change your meal plan tier once, but only in the first ten days of the semester. After that, it is locked.
@@ -254,20 +246,17 @@ Source: admin_meal_plan_changes.txt
 
 Nothing missed — all five hit their numbers in all three runs.
 
-Criterion 1 was looser than it looked, though: the housing-lottery
-question only passed because the generator inferred a negation
-("no, ... but juniors/seniors are ordered by credit hours") that
-`admin_housing_lottery.txt` never states — it attaches "number" only to
-the random draw for sophomores. Retrieval was fine (same chunk, every
-run, distance 0.3875); the criterion just couldn't distinguish "states
-this" from "implies this." Tightened in criteria.md — under that
-reading, this is the one genuine 4-of-5 case in the set.
+Criterion 1 was looser than it looked, though: the housing-lottery question only passed because the generator inferred a negation ("no, ... but juniors/seniors are ordered by credit hours") that `admin_housing_lottery.txt` never states — it attaches "number" only to the random draw for sophomores. Retrieval was fine (same chunk, every run, distance 0.3875); the criterion just couldn't distinguish "states this" from "implies this." Tightened in criteria.md — under that reading, this is the one genuine 4-of-5 case in the set.
 
 ## The Improvement
 
 **What I changed:**
 
+Added a rule to `GROUNDING_INSTRUCTION` in `generate.py`: the model must state only conclusions the documents assert directly, and explicitly flag ("The document doesn't say this outright, but...") any place it has to infer or negate something the text doesn't literally say, instead of presenting that inference as fact.
+
 **Why I picked it:**
+
+The Diagnoses section found the housing-lottery answer's flat "No" was the generator inferring a negation that `admin_housing_lottery.txt` never states, while retrieval pulled the same correct chunk every run — so the failure was at generation, not chunking or retrieval, which is what this prompt change targets.
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->
@@ -279,20 +268,23 @@ reading, this is the one genuine 4-of-5 case in the set.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4 of 5 | 4 of 5 | 4 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. No chunk under 150 or over 600 characters | 0 of 88 | 0 of 88 | 0 of 88 | 0 of 88 | MET |
+| 5. Every answer supported, nothing unsupported | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+
+Produced by `run_eval.py::main` and `run_eval.py::check_out_of_scope`; raw output in `results/run_2026-09-28_0039_after.md`. The prompt change in `generate.py::GROUNDING_INSTRUCTION` only touches generation, so retrieval and chunking are unchanged from the before log — criteria 1, 3, and 4 repeat their before numbers.
+
+**Criterion 1** — the housing-lottery question is still the one miss: `admin_housing_lottery.txt` says a senior with summer courses "reliably beats" one without, but never attaches "number" to juniors/seniors — so "no, it doesn't get you a better *number*" is still a step the chunk itself doesn't state, in every run, e.g.:
+
+```
+The documents state that juniors and seniors are ordered by accumulated credit hours first, meaning a senior who took summer courses reliably beats a senior who didn't. (Source: admin_housing_lottery.txt)
+```
 
 **Did it help?**
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
-
-     Milestone 4. -->
+Partly. The flat, unqualified "No" from the before log is gone — runs now hedge into language the source actually supports, so criterion 5 stayed a clean 5 of 5 with no fabricated details. But it didn't fix criterion 1: the chunk still never states the answer in quotable form, so that question stays a miss in all three after-runs (4 of 5, unchanged), and run 3 still opens with a bare "No." before its caveat, so the rule isn't applied consistently. Both criteria were already MET before the change, so no verdict moved — the improvement shows in the answer text, not the scoreboard.
 
 ## What's Still Broken
 
