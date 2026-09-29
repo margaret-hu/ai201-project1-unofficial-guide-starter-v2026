@@ -140,16 +140,6 @@ I ran `python app.py retrieve "..."` for my five in-corpus questions and the fiv
 
 ## Run Log — Before
 
-<!-- Your five criteria, three runs each. `python run_eval.py --label before`
-     runs the questions, puts the OUT_OF_SCOPE ones through the gate, and
-     writes it all into results/ for you. Targets come from criteria.md; the
-     verdict column is your call.
-
-     Criterion 3 is measured in one deterministic pass rather than three, so
-     the same number goes in all three run columns. That's correct, not lazy.
-
-     Milestone 1. -->
-
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
 | 1. Retrieved chunk contains the answer | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
@@ -201,20 +191,7 @@ Yes, you can change your meal plan tier once, but only in the first ten days of 
 Source: admin_meal_plan_changes.txt
 ```
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
-
 ## Verdicts
-
-<!-- MET or MISSED for each of the five, against the target you wrote last
-     unit — not a new one. Plus a sentence on how you decided. That sentence
-     matters most where it was close.
-
-     If your target said 4 of 5 and your runs came out 4, 3, 4, that's a MISS.
-     The target has to hold, not show up occasionally.
-
-     Milestone 2. -->
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
@@ -225,24 +202,6 @@ Source: admin_meal_plan_changes.txt
 | 5 | Every answer supported, nothing unsupported | MET | This one needed a judgment call — I read all 15 answers (5 questions × 3 runs) against their cited source's text and found nothing that wasn't there. |
 
 ## Diagnoses
-
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
-
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
-
-     The five stages: loading → chunking → embedding → retrieval → generation.
-
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
-
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
-
-     Milestone 3. -->
 
 Nothing missed — all five hit their numbers in all three runs.
 
@@ -258,13 +217,7 @@ Added a rule to `GROUNDING_INSTRUCTION` in `generate.py`: the model must state o
 
 The Diagnoses section found the housing-lottery answer's flat "No" was the generator inferring a negation that `admin_housing_lottery.txt` never states, while retrieval pulled the same correct chunk every run — so the failure was at generation, not chunking or retrieval, which is what this prompt change targets.
 
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
-
 ### Run Log — After
-
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
@@ -288,17 +241,14 @@ Partly. The flat, unqualified "No" from the before log is gone — runs now hedg
 
 ## What's Still Broken
 
-<!-- For each criterion still missed after your fix: what you'd do about it,
-     and why you stopped where you did.
+Every criterion is MET, but criterion 1's 4-of-5 still hides a real gap: `admin_housing_lottery.txt` never states the housing-lottery negation in quotable form, so it's a corpus/chunking problem, not a generation one — no prompt tweak fixes a fact that isn't in the text. The prompt fix isn't even fully consistent either; run 3 in the after log still opens with a bare "No." before hedging.
 
-     "I ran out of time" is fine if it's true. Pretending nothing is left is
-     not.
-
-     Milestone 5. -->
+I stopped rather than edit the source document, since rewriting the corpus to make my own system pass feels like curating the test, not fixing the pipeline.
 
 ## What I'd Do Differently
 
-<!-- Knowing what you know now — which of your five criteria would you write
-     differently, and why?
+**Criterion 1** — I'd set "directly quotable, not inferred" as the original target instead of a unit-2 revision. My own unit-1 "why" already flagged the housing-lottery question as the risky one; I had enough to predict this before running anything.
 
-     Milestone 5. -->
+**Criterion 3** — 4 of 5 was too loose. The in-corpus/out-of-scope distance gap is 0.386 wide, and the gate hit 5 of 5 every run in both logs. 5 of 5 would've been the honest bar.
+
+**Criterion 5** — I'd define "supported" up front as "near-verbatim in a retrieved chunk, else flagged as inference" — the same distinction I only reached after diagnosing the housing-lottery gap.
