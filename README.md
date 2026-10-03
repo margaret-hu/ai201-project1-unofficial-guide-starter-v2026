@@ -239,6 +239,40 @@ The documents state that juniors and seniors are ordered by accumulated credit h
 
 Partly. The flat, unqualified "No" from the before log is gone — runs now hedge into language the source actually supports, so criterion 5 stayed a clean 5 of 5 with no fabricated details. But it didn't fix criterion 1: the chunk still never states the answer in quotable form, so that question stays a miss in all three after-runs (4 of 5, unchanged), and run 3 still opens with a bare "No." before its caveat, so the rule isn't applied consistently. Both criteria were already MET before the change, so no verdict moved — the improvement shows in the answer text, not the scoreboard.
 
+## The Second Improvement
+
+**What I changed:**
+
+Raised `TOP_K` in `config.py` from 5 to 8 — a Milestone 4 retrieval change this time, not another generation-prompt edit.
+
+**Why I picked it:**
+
+The first improvement only touched generation. `advising_registration.txt` is the only other document mentioning credit-hour staggering, and it wasn't in the top-5 retrieved chunks — widening the window was the untried retrieval-side lever that might surface it.
+
+### Run Log — After (second change)
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4 of 5 | 4 of 5 | 4 of 5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+| 4. No chunk under 150 or over 600 characters | 0 of 88 | 0 of 88 | 0 of 88 | 0 of 88 | MET |
+| 5. Every answer supported, nothing unsupported | 5 of 5 | 5 of 5 | 5 of 5 | 5 of 5 | MET |
+
+Produced by `run_eval.py::main`; raw output in `results/run_2026-10-03_0026_after2.md`. Only `TOP_K` changed (5 → 8) — everything else, including the generation prompt, is identical to the first improvement.
+
+**Criterion 1** — the wider window did pull `advising_registration.txt` into the retrieved set, but it only corroborates the credit-hour ordering, it doesn't attach "number" to juniors/seniors any more directly than `admin_housing_lottery.txt` already does. The miss is unchanged, in every run:
+
+```
+No, taking summer courses does not get you a better lottery *number*; rising sophomores get a number drawn at random, but juniors and seniors are ordered by accumulated credit hours with random tie-breaks, meaning a senior with more credit hours from summer courses reliably beats one who didn't.
+
+Source: admin_housing_lottery.txt
+```
+
+**Did it help?**
+
+No. Every criterion matches the first improvement's after-log exactly — a wider top-k can't move criterion 3's best distance (the nearest chunk is already inside any k ≥ 1), and criterion 1 stays at 4 of 5 since the fact simply isn't written down anywhere in the corpus. The only visible change is cosmetic: answers now cite a couple more of the eight retrieved sources, with no new fabrication. The housing-lottery gap is a corpus/chunking problem — not generation, and now, not retrieval coverage either.
+
 ## What's Still Broken
 
 Every criterion is MET, but criterion 1's 4-of-5 still hides a real gap: `admin_housing_lottery.txt` never states the housing-lottery negation in quotable form, so it's a corpus/chunking problem, not a generation one — no prompt tweak fixes a fact that isn't in the text. The prompt fix isn't even fully consistent either; run 3 in the after log still opens with a bare "No." before hedging.
