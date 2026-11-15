@@ -286,3 +286,35 @@ I stopped rather than edit the source document, since rewriting the corpus to ma
 **Criterion 3** — 4 of 5 was too loose. The in-corpus/out-of-scope distance gap is 0.386 wide, and the gate hit 5 of 5 every run in both logs. 5 of 5 would've been the honest bar.
 
 **Criterion 5** — I'd define "supported" up front as "near-verbatim in a retrieved chunk, else flagged as inference" — the same distinction I only reached after diagnosing the housing-lottery gap.
+
+---
+
+# Unit 9
+
+## The Shape
+
+Shape A (deploy and instrument), Path B (run locally, with logs). I'm adding an
+operational layer to `serve.py` and leaving the pipeline underneath untouched:
+every `POST /ask` writes exactly one JSONL record (timestamp, question, answer or
+error, refused, sources, latency in ms, `cache_hit`, and token counts). `generate.py` will
+return per-call token usage so I can compute cost per answered question from what
+the Gemini response reports, not an estimate. I'll also add a way to force a
+pipeline failure so the 500 path can be tested, and write a Capstone section in
+RUNNING.md that gets a clean clone to a successful `POST /ask`. The acceptance
+criteria for all of this (C1-C5) are in `criteria.md`, written before any results.
+
+Size check: about 85 minutes of building (logging 25, token usage and cost 10,
+failure switch 5, `analyze_log.py` 15, Capstone section 20), touching four files
+with no new dependencies. If I'm running over, the first thing I cut is the cost
+computation: I'd log raw token counts only and compute cost later in
+`analyze_log.py`.
+
+## Out of Scope
+
+- **No real deployment.** Path B means the service runs on my machine; I'm not
+  setting up a host, a domain, or a persistent disk for the index.
+- **No changes to retrieval, chunking, the gate, or the prompt.** C5 exists to
+  prove the HTTP and logging layers didn't change refusal behavior, so the
+  pipeline stays as it is. The housing-lottery gap from unit 2 stays a known gap.
+- **No dashboard, metrics server, or log aggregation.** The log is a JSONL file I
+  read with a short script. No new interface either.
