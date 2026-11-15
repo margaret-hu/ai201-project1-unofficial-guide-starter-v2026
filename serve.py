@@ -20,20 +20,40 @@ Why this exists: `app.py` runs once and exits, which is fine on your laptop
 and impossible to deploy. A hosted service has to stay up and wait for
 requests. This is the smallest thing that does that.
 
-⚠️ There is deliberately no logging, no timing and no metrics in this file.
-Unit 9 has you build the structured log yourself — the request line, the
-timing field everyone skips, the whole instrument-before-you-deploy exercise.
-Shipping a logger here would hand you the answer to that. Add yours in unit 9;
-this file stays the bare shell until then.
+Capstone: every POST /ask writes exactly one JSONL record to the request log
+(default logs/requests.jsonl, override with AI201_LOG) — answered, refused,
+400 and 500 alike. Fields: timestamp, question, answer, error, refused,
+sources, latency_ms, status, cache_hit, prompt_tokens, output_tokens,
+thinking_tokens, best_distance. Keys are always present; a field that doesn't apply is null.
 """
 
+import json
 import os
+import sys
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 from flask import Flask, jsonify, request
 
 import config
 
 app = Flask(__name__)
+
+LOG_PATH = Path(os.getenv("AI201_LOG", "logs/requests.jsonl"))
+_log_lock = threading.Lock()
+
+
+def write_log(record: dict) -> None:
+    """Append one JSON line. Never raises: logging must not break a request."""
+    try:
+        with _log_lock:
+            LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with LOG_PATH.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[log] could not write request log: {exc}", file=sys.stderr)
 
 
 @app.get("/health")
@@ -70,39 +90,91 @@ def ask():
     A refused question is a 200, not an error. The gate refusing is your
     system working — it is an answer, and the JSON says so with
     `"refused": true` so whatever calls this can tell the two apart.
+
+    Exactly one log record is written per call, in `finally`, so no path
+    (400, 500, refusal, success) can skip it.
     """
     from app import ask_pipeline
 
-    payload = request.get_json(silent=True) or {}
-    question = (payload.get("question") or "").strip()
-
-    if not question:
-        return (
-            jsonify(
-                {
-                    "error": "Send JSON with a question in it, like "
-                    '{"question": "is the housing lottery random?"}'
-                }
-            ),
-            400,
-        )
-
+    started = time.perf_counter()
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "question": None,
+        "answer": None,
+        "error": None,
+        "refused": None,
+        "sources": None,
+        "latency_ms": None,
+        "status": 500,  # overwritten on every path that returns normally
+        "cache_hit": None,
+        "prompt_tokens": None,
+        "output_tokens": None,
+        "thinking_tokens": None,
+        "best_distance": None,
+    }
     try:
-        outcome = ask_pipeline(question, corpus=config.CORPUS)
-    except Exception as exc:  # noqa: BLE001 — a reader gets this, not a traceback
-        return jsonify({"error": f"{type(exc).__name__}: {exc}"}), 500
+        payload = request.get_json(silent=True) or {}
+        question = (payload.get("question") or "").strip()
+        record["question"] = question
 
-    return jsonify(
-        {
-            "question": question,
-            "answer": outcome["answer"],
-            "refused": outcome["refused"],
-            "sources": outcome["sources"],
-            "best_distance": round(outcome["best_distance"], 4),
-            "threshold": outcome["threshold"],
-            "corpus": config.CORPUS,
-        }
-    )
+        if not question:
+            record["status"] = 400
+            record["error"] = "empty question"
+            return (
+                jsonify(
+                    {
+                        "error": "Send JSON with a question in it, like "
+                        '{"question": "is the housing lottery random?"}'
+                    }
+                ),
+                400,
+            )
+
+        try:
+            # Test hook for criterion C1: only honoured when explicitly enabled.
+            if (
+                os.getenv("AI201_ALLOW_FORCE_FAIL") == "1"
+                and request.headers.get("X-Force-Failure") == "1"
+            ):
+                raise RuntimeError("forced failure (X-Force-Failure)")
+            outcome = ask_pipeline(question, corpus=config.CORPUS)
+        except Exception as exc:  # noqa: BLE001 — a reader gets this, not a traceback
+            message = f"{type(exc).__name__}: {exc}"
+            record["status"] = 500
+            record["error"] = message
+            return jsonify({"error": message}), 500
+
+        usage = outcome.get("usage") or {}
+        record.update(
+            status=200,
+            answer=outcome["answer"],
+            refused=outcome["refused"],
+            sources=outcome["sources"],
+            best_distance=round(outcome["best_distance"], 4),
+            cache_hit=usage.get("cache_hit"),
+            prompt_tokens=usage.get("prompt_tokens"),
+            output_tokens=usage.get("output_tokens"),
+            thinking_tokens=usage.get("thinking_tokens"),
+        )
+        return jsonify(
+            {
+                "question": question,
+                "answer": outcome["answer"],
+                "refused": outcome["refused"],
+                "sources": outcome["sources"],
+                "best_distance": round(outcome["best_distance"], 4),
+                "threshold": outcome["threshold"],
+                "corpus": config.CORPUS,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001 — anything unexpected is still a 500
+        message = f"{type(exc).__name__}: {exc}"
+        record["status"] = 500
+        record["error"] = message
+        return jsonify({"error": message}), 500
+    finally:
+        record["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        write_log(record)
 
 
 def main():
