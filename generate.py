@@ -122,7 +122,7 @@ def _check_budget() -> None:
     )
 
 
-def _record_tokens(response) -> None:
+def _record_tokens(response) -> tuple[int, int, int]:
     """Add one response's token counts to this session's running totals.
 
     These come off the response itself, which is the point. When you work out
@@ -139,11 +139,17 @@ def _record_tokens(response) -> None:
     try:
         meta = getattr(response, "usage_metadata", None)
         if meta is None:
-            return
-        _session_prompt_tokens += int(getattr(meta, "prompt_token_count", 0) or 0)
-        _session_output_tokens += int(getattr(meta, "candidates_token_count", 0) or 0)
+            return 0, 0, 0
+        prompt_tokens = int(getattr(meta, "prompt_token_count", 0) or 0)
+        output_tokens = int(getattr(meta, "candidates_token_count", 0) or 0)
+        # Thinking tokens are reported separately but billed as output, so a
+        # cost computed from candidates alone would come out too low.
+        thinking_tokens = int(getattr(meta, "thoughts_token_count", 0) or 0)
+        _session_prompt_tokens += prompt_tokens
+        _session_output_tokens += output_tokens + thinking_tokens
+        return prompt_tokens, output_tokens, thinking_tokens
     except Exception:
-        pass  # accounting never breaks the thing it is accounting for
+        return 0, 0, 0  # accounting never breaks the thing it is accounting for
 
 
 def usage() -> str:
@@ -200,8 +206,21 @@ def _get_client():
 
 
 def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
+    """Send a prompt and get text back. See `generate_with_usage` for details."""
+    return generate_with_usage(prompt, system=system, cache=cache)[0]
+
+
+def generate_with_usage(
+    prompt: str, system: str | None = None, cache: bool = True
+) -> tuple[str, dict]:
     """
-    Send a prompt and get text back.
+    Send a prompt and get (text, usage) back.
+
+    `usage` is this one call's own numbers, not session totals:
+    {"prompt_tokens", "output_tokens", "thinking_tokens": int, "cache_hit": bool}.
+    Thinking tokens are billed as output.
+    Token counts are read off the response; a cache hit reports 0 and
+    cache_hit=True, since it never reached the service.
 
     Args:
         prompt: what you're asking.
@@ -222,7 +241,12 @@ def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
         hit = _cache_read(key)
         if hit is not None:
             _cache_hits += 1
-            return hit
+            return hit, {
+                "prompt_tokens": 0,
+                "output_tokens": 0,
+                "thinking_tokens": 0,
+                "cache_hit": True,
+            }
 
     _check_budget()
 
@@ -239,12 +263,17 @@ def generate(prompt: str, system: str | None = None, cache: bool = True) -> str:
                 kwargs["config"] = {"system_instruction": system}
 
             response = client.models.generate_content(**kwargs)
-            _record_tokens(response)
+            prompt_tokens, output_tokens, thinking_tokens = _record_tokens(response)
             text = (response.text or "").strip()
 
             if use_cache:
                 _cache_write(key, text)
-            return text
+            return text, {
+                "prompt_tokens": prompt_tokens,
+                "output_tokens": output_tokens,
+                "thinking_tokens": thinking_tokens,
+                "cache_hit": False,
+            }
 
         except Exception as exc:  # noqa: BLE001 — surfaced below
             last_error = exc
@@ -312,5 +341,12 @@ def answer_from_chunks(question: str, results, cache: bool = True) -> str:
     first — it has already decided these chunks are close enough to be worth
     answering from.
     """
+    return answer_from_chunks_with_usage(question, results, cache=cache)[0]
+
+
+def answer_from_chunks_with_usage(
+    question: str, results, cache: bool = True
+) -> tuple[str, dict]:
+    """Same as `answer_from_chunks`, but also returns this call's usage."""
     prompt = build_prompt(question, results)
-    return generate(prompt, system=GROUNDING_INSTRUCTION, cache=cache)
+    return generate_with_usage(prompt, system=GROUNDING_INSTRUCTION, cache=cache)

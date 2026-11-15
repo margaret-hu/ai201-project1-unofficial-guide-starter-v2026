@@ -201,7 +201,7 @@ def ask_pipeline(
     """
     from store import search
     import gate
-    from generate import answer_from_chunks, build_prompt
+    from generate import answer_from_chunks_with_usage, build_prompt
 
     results = search(
         question,
@@ -220,6 +220,7 @@ def ask_pipeline(
         "threshold": decision.threshold,
         "sources": [],
         "prompt": None,
+        "usage": None,  # per-call tokens and cache_hit; None when refused
     }
 
     if not decision.passed:
@@ -231,7 +232,9 @@ def ask_pipeline(
         on_prompt(prompt)
 
     outcome["prompt"] = prompt
-    outcome["answer"] = answer_from_chunks(question, results)
+    outcome["answer"], outcome["usage"] = answer_from_chunks_with_usage(
+        question, results
+    )
     outcome["sources"] = sorted({r.source for r in results})
     return outcome
 
