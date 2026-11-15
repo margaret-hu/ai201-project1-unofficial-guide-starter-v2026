@@ -318,3 +318,25 @@ computation: I'd log raw token counts only and compute cost later in
   pipeline stays as it is. The housing-lottery gap from unit 2 stays a known gap.
 - **No dashboard, metrics server, or log aggregation.** The log is a JSONL file I
   read with a short script. No new interface either.
+
+## Instrumentation
+
+Every `POST /ask` appends one JSON line to `logs/requests.jsonl`, written in a
+`finally` block so the 400 and 500 paths can't skip it. Each record has named
+fields: `timestamp`, `question`, `answer`, `error`, `refused`, `sources`,
+`latency_ms`, `status`, `cache_hit`, `prompt_tokens`, `output_tokens`,
+`thinking_tokens` and `best_distance`. A field that doesn't apply (for example
+`answer` on a 400) is `null`, so every record has the same keys.
+
+## What It Costs
+
+**How I measured it.** I start `serve.py` fresh with `AI201_CACHE=0` and send 21
+answered questions, cycling through six of my test questions. The first request
+of that run is the cold one and is excluded. For the remaining 20, the token
+counts are the ones the Gemini response reports for that call (`prompt_tokens`,
+`output_tokens`, plus `thinking_tokens`, which are billed as output). I multiply
+them by the model's published price, $0.30 per million input tokens and $2.50 per
+million output tokens (`gemini-3.5-flash-lite`, standard tier, recorded
+2026-11-14 in `criteria.md`), and average. So the token counts are measured, but
+the price per token comes from the pricing page. I do not read a dollar figure
+off a bill.
