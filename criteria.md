@@ -113,3 +113,81 @@ A fabricated detail is worse than an admitted miss, since it looks just as autho
      The whole reason the originals stay visible is so someone can see what you
      said before you knew the answer.
      ───────────────────────────────────────────────────────────────────────── -->
+
+---
+
+# Capstone — shape A (deploy and instrument), Path B (local with logs)
+
+Written before any capstone results exist. Criteria C1-C4 are about the new
+operational layer; C5 checks that the layer didn't break the system underneath.
+
+"Warm" means a request made after at least one earlier request has already
+been answered by the same running `serve.py` process; the first request after
+start is cold and is reported separately, not counted toward any target.
+Cached model responses (`.cache/`) are excluded from C2 and C3: the cache is
+disabled or each record carries a `cache_hit` field, so a hit never makes
+latency or cost look better than a real call.
+
+## C1. Every request leaves a complete log record
+
+Across 20 requests sent to `POST /ask` — including refused questions, an empty
+question (400), and one forced pipeline failure (500) — every request writes
+exactly one JSONL record containing: timestamp, question, answer (or error),
+refused, sources, and latency in milliseconds. Target: 20 of 20, no missing
+fields, no missing records, no duplicates.
+
+**Why this target:**
+Zero slack makes the test straightforward: all 20 requests must produce exactly
+one record, including the 400 and forced 500 paths. A missing error-path record
+removes the evidence needed to diagnose failures later; duplicates make the
+request count and latency data unreliable.
+
+## C2. Warm latency: p95 under 5 seconds
+
+p95 end-to-end latency (the logged latency field) over 20 warm, non-cached
+answered requests is under 5 seconds.
+
+**Why this target:**
+A warm request is one local retrieval over 88 chunks plus a single call to the
+hosted model, so the model call is the only external hop and should take a few
+seconds at most. 5 s leaves room for network variability but would still catch
+a real slow path; a looser ceiling would pass even when something is badly
+wrong. p95 rather than the mean because a few very slow requests are hidden by
+otherwise fast ones.
+
+## C3. Cost per answered question: under $0.002
+
+Mean cost per answered (non-refused, non-cached) question, computed from the
+token counts the Gemini response reports and the selected model's published
+per-token price, is under $0.002. Refused questions are reported separately so
+they don't distort it.
+
+**Why this target:**
+Each prompt carries 8 retrieved chunks of about 317 characters, roughly 1,000
+input tokens, plus a short answer of about 100 output tokens. Even at a
+pessimistic price that comes to well under a quarter of a cent, so $0.002
+leaves headroom for longer answers while still catching a prompt that has
+grown. Computed from reported usage, not estimated.
+
+## C4. A clean checkout runs from RUNNING.md alone
+
+On a fresh `git clone` into an empty directory, following only the Capstone
+section of RUNNING.md, I reach a successful `POST /ask` (HTTP 200, non-empty
+answer) with no step I had to remember from outside the document. Target:
+succeeds on the first attempt, tried once from a clean directory.
+
+**Why this target:**
+Success on the first attempt checks that RUNNING.md is a complete, reproducible
+procedure, not just a description of the code. In particular it should cover
+prerequisites, credentials, index building, and any model download needed
+before serving.
+
+## C5. The gate still holds through the HTTP path
+
+Sent through `POST /ask`, the 5 `OUT_OF_SCOPE` questions are all refused
+(`"refused": true`), in each of 3 trials. Target: 5 of 5, every trial.
+
+**Why this target:**
+The 5-of-5 target in every trial checks that adding the HTTP and logging layers
+hasn't changed refusal behavior. A miss would indicate a regression in the gate
+or its integration, rather than acceptable variation in logging.
