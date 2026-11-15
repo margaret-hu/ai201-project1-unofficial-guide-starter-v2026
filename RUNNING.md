@@ -217,8 +217,84 @@ gunicorn serve:app                 # the way a host starts it
 > the first request after a quiet spell waits roughly a minute for it to wake
 > up. That's the tier, not your code.
 
-`serve.py` has **no logging and no timing in it on purpose** — building that is
-the unit 9 exercise, and it is easier to instrument something you wrote.
+The logging and timing for `serve.py` are the unit 9 exercise. The finished
+version is described in the Capstone section below.
+
+---
+
+## Capstone — run the instrumented service locally
+
+> C4 in `criteria.md` is tested by following only this section on a fresh
+> clone. Commands are PowerShell.
+
+1. **Clone and enter the repo**
+
+   ```powershell
+   git clone https://github.com/margaret-hu/ai201-project1-unofficial-guide-starter-v2026.git unofficial-guide
+   cd unofficial-guide
+   ```
+
+2. **Create the environment and install dependencies**
+
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
+
+3. **Add your Gemini API key.** The key is not in the repo.
+
+   ```powershell
+   copy .env.example .env     # then paste your key into .env
+   ```
+
+4. **Build the index.** The first run downloads the ~80 MB embedding model
+   (`chroma-onnx-models.s3.amazonaws.com` must be reachable). The index is not
+   committed, so this step is required on a clean checkout.
+
+   ```powershell
+   python app.py index
+   ```
+
+5. **Start the service** (single process; do not use multiple gunicorn workers,
+   they would interleave writes to the log).
+
+   ```powershell
+   python serve.py
+   ```
+
+   This keeps running and holds the terminal. **Open a second PowerShell
+   window**, `cd` into the repo there, and do the remaining steps in it.
+
+6. **Check it is ready**, then ask a question. `index_ready` must be `true`.
+   Use `curl.exe`, not `curl`: in PowerShell plain `curl` is an alias for
+   `Invoke-WebRequest` and rejects these flags.
+
+   ```powershell
+   curl.exe http://localhost:5000/health
+   curl.exe -X POST http://localhost:5000/ask -H "Content-Type: application/json" -d "{\"question\": \"is the housing lottery random?\"}"
+   ```
+
+   Expect HTTP 200 and a non-empty `answer`.
+
+7. **Read the log.** Every `POST /ask` appends one JSON line to
+   `logs/requests.jsonl` (override the path with `AI201_LOG`):
+
+   ```powershell
+   Get-Content logs\requests.jsonl -Tail 1
+   ```
+
+   Fields: `timestamp, question, answer, error, refused, sources, latency_ms,
+   status, cache_hit, prompt_tokens, output_tokens, thinking_tokens,
+   best_distance`. A field
+   that doesn't apply (for example `answer` on a 400) is `null`.
+
+### Settings for the capstone runs
+
+| Setting | Value | Why |
+|---|---|---|
+| `AI201_CACHE=0` | set for C2 and C3 runs | cached answers would make latency and cost look better than a real call |
+| `AI201_ALLOW_FORCE_FAIL=1` | set before `python serve.py` for C1 | enables the test hook; then send header `X-Force-Failure: 1` on one request to get a logged 500. Without the env var the header is ignored |
 
 ---
 
