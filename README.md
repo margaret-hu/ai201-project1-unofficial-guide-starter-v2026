@@ -322,21 +322,53 @@ computation: I'd log raw token counts only and compute cost later in
 ## Instrumentation
 
 Every `POST /ask` appends one JSON line to `logs/requests.jsonl`, written in a
-`finally` block so the 400 and 500 paths can't skip it. Each record has named
-fields: `timestamp`, `question`, `answer`, `error`, `refused`, `sources`,
-`latency_ms`, `status`, `cache_hit`, `prompt_tokens`, `output_tokens`,
-`thinking_tokens` and `best_distance`. A field that doesn't apply (for example
-`answer` on a 400) is `null`, so every record has the same keys.
+`finally` block so the 400 and 500 paths can't skip it. The twelve records below
+come from one session (`logs/capstone_c1.jsonl`, 20 requests): seven answered
+questions, three refusals, one rejected empty question (400), and one forced
+pipeline failure (500). Only the `answer` field is shortened (to 110 characters
+with `…`); every other field is as logged.
+
+```jsonl
+{"timestamp": "2026-11-15T07:15:09.145587+00:00", "question": "How late in the semester can I declare a pass/fail course?", "answer": "You can declare a course pass/fail as late as week eight, after you have seen your midterm. (Source: admin_pas…", "error": null, "refused": false, "sources": ["admin_add_drop_deadline.txt", "admin_declaring_a_major.txt", "admin_grade_appeals.txt", "admin_graduation_requirements.txt", "admin_pass_fail_option.txt", "course_biol_160.txt", "course_cs_340.txt", "course_stat_150.txt"], "latency_ms": 4334.1, "status": 200, "cache_hit": false, "prompt_tokens": 879, "output_tokens": 34, "thinking_tokens": 0, "best_distance": 0.2039}
+{"timestamp": "2026-11-15T07:15:15.556794+00:00", "question": "Does the library stay open later during term or during reading week?", "answer": "The library stays open later during term, closing at 2am compared to 10pm during reading week. \n\nSource: *stud…", "error": null, "refused": false, "sources": ["admin_library_holds.txt", "housing_calder_annexe_noise.txt", "housing_morrow_house_noise.txt", "money_jobs.txt", "money_textbooks.txt", "orientation_what_matters.txt", "study_group_rooms.txt", "study_library_hours.txt"], "latency_ms": 735.7, "status": 200, "cache_hit": false, "prompt_tokens": 847, "output_tokens": 36, "thinking_tokens": 0, "best_distance": 0.4392}
+{"timestamp": "2026-11-15T07:15:18.338641+00:00", "question": "Is there a waitlist for parking permits if I miss the sale window?", "answer": "According to `admin_parking_permits.txt`, there is no waitlist for parking permits.", "error": null, "refused": false, "sources": ["admin_parking_permits.txt", "advising_registration.txt", "dining_halden_hall_followup.txt", "dining_kestrel_commons_followup.txt", "dining_north_kitchen_followup.txt", "dining_the_atrium_followup.txt", "dining_verrill_street_grill_followup.txt", "transit_shuttle.txt"], "latency_ms": 696.8, "status": 200, "cache_hit": false, "prompt_tokens": 957, "output_tokens": 21, "thinking_tokens": 0, "best_distance": 0.3657}
+{"timestamp": "2026-11-15T07:15:21.104992+00:00", "question": "What is the capital of Mongolia?", "answer": "I don't have enough information about that.", "error": null, "refused": true, "sources": [], "latency_ms": 87.5, "status": 200, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": 0.8246}
+{"timestamp": "2026-11-15T07:15:23.241429+00:00", "question": "How do I change the oil in a diesel engine?", "answer": "I don't have enough information about that.", "error": null, "refused": true, "sources": [], "latency_ms": 73.6, "status": 200, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": 0.934}
+{"timestamp": "2026-11-15T07:15:25.377021+00:00", "question": "", "answer": null, "error": "empty question", "refused": null, "sources": null, "latency_ms": 0.4, "status": 400, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": null}
+{"timestamp": "2026-11-15T07:15:27.449921+00:00", "question": "Who won the 1994 World Cup?", "answer": "I don't have enough information about that.", "error": null, "refused": true, "sources": [], "latency_ms": 81.6, "status": 200, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": 0.8859}
+{"timestamp": "2026-11-15T07:15:33.844099+00:00", "question": "forced failure test", "answer": null, "error": "RuntimeError: forced failure (X-Force-Failure)", "refused": null, "sources": null, "latency_ms": 0.5, "status": 500, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": null}
+{"timestamp": "2026-11-15T07:15:35.917407+00:00", "question": "Can I change my meal plan tier after the semester starts?", "answer": "Yes, you can change your meal plan tier once, but only in the first ten days of the semester. After that, it i…", "error": null, "refused": false, "sources": ["admin_dining_dollars.txt", "admin_meal_plan_changes.txt", "dining_kestrel_commons.txt", "dining_kestrel_commons_followup.txt", "dining_north_kitchen_followup.txt", "dining_pellew_dining_hall_followup.txt", "dining_verrill_street_grill.txt", "money_jobs.txt"], "latency_ms": 739.3, "status": 200, "cache_hit": false, "prompt_tokens": 980, "output_tokens": 43, "thinking_tokens": 0, "best_distance": 0.1647}
+{"timestamp": "2026-11-15T07:15:38.710608+00:00", "question": "Does taking summer courses for extra credit hours get me a better housing lottery number?", "answer": "No, taking summer courses for extra credit hours does not get you a better housing lottery number. Instead, ju…", "error": null, "refused": false, "sources": ["admin_add_drop_deadline.txt", "admin_campus_jobs_and_financial_aid.txt", "admin_housing_lottery.txt", "admin_meal_plan_changes.txt", "admin_pass_fail_option.txt", "advising_registration.txt", "dining_halden_hall.txt", "housing_aldridge_hall.txt"], "latency_ms": 677.1, "status": 200, "cache_hit": false, "prompt_tokens": 867, "output_tokens": 65, "thinking_tokens": 0, "best_distance": 0.3875}
+{"timestamp": "2026-11-15T07:15:41.448059+00:00", "question": "How late in the semester can I declare a pass/fail course?", "answer": "You can declare a pass/fail option as late as week eight, after you've seen your midterm. (Source: admin_pass_…", "error": null, "refused": false, "sources": ["admin_add_drop_deadline.txt", "admin_declaring_a_major.txt", "admin_grade_appeals.txt", "admin_graduation_requirements.txt", "admin_pass_fail_option.txt", "course_biol_160.txt", "course_cs_340.txt", "course_stat_150.txt"], "latency_ms": 880.2, "status": 200, "cache_hit": false, "prompt_tokens": 879, "output_tokens": 35, "thinking_tokens": 0, "best_distance": 0.2039}
+{"timestamp": "2026-11-15T07:15:44.386484+00:00", "question": "Does the library stay open later during term or during reading week?", "answer": "Based on the documents, the library stays open later during term (until 2am) than during reading week (until 1…", "error": null, "refused": false, "sources": ["admin_library_holds.txt", "housing_calder_annexe_noise.txt", "housing_morrow_house_noise.txt", "money_jobs.txt", "money_textbooks.txt", "orientation_what_matters.txt", "study_group_rooms.txt", "study_library_hours.txt"], "latency_ms": 744.1, "status": 200, "cache_hit": false, "prompt_tokens": 847, "output_tokens": 72, "thinking_tokens": 0, "best_distance": 0.4392}
+```
+
+**Failed runs.** Both left a record rather than an absence:
+
+- Record 6, status `400`: the empty question was rejected before the pipeline ran.
+- Record 10, status `500`: I forced this one on purpose with the
+  `AI201_ALLOW_FORCE_FAIL=1` test hook and the `X-Force-Failure: 1` header, to
+  prove the error path is logged. No real pipeline error, timeout or Gemini
+  failure happened in any of my runs.
 
 ## What It Costs
 
-**How I measured it.** I start `serve.py` fresh with `AI201_CACHE=0` and send 21
+**Number:** about **$0.00037 per answered question**. A refused question costs $0.
+
+**How I measured it.** I started `serve.py` fresh with `AI201_CACHE=0` and sent 21
 answered questions, cycling through six of my test questions. The first request
-of that run is the cold one and is excluded. For the remaining 20, the token
-counts are the ones the Gemini response reports for that call (`prompt_tokens`,
-`output_tokens`, plus `thinking_tokens`, which are billed as output). I multiply
-them by the model's published price, $0.30 per million input tokens and $2.50 per
-million output tokens (`gemini-3.5-flash-lite`, standard tier, recorded
-2026-11-14 in `criteria.md`), and average. So the token counts are measured, but
-the price per token comes from the pricing page. I do not read a dollar figure
-off a bill.
+of that run was the cold one (2729 ms) and is excluded. For the remaining 20, the
+token counts are the ones the Gemini response reported for that call
+(`prompt_tokens`, `output_tokens`, plus `thinking_tokens`, which are billed as
+output and were 0 on every call). I multiplied them by the model's published
+price, $0.30 per million input tokens and $2.50 per million output tokens
+(`gemini-3.5-flash-lite`, standard tier, recorded 2026-11-14 in `criteria.md`),
+and averaged. So the token counts are measured, but the price per token comes
+from the pricing page. I did not read a dollar figure off a bill.
+
+| | n | mean | p95 | max |
+|---|---|---|---|---|
+| Latency, warm | 20 | 1297 ms | 2052 ms | 8281 ms |
+| Cost per answered question | 20 | $0.00037 | | $0.00042 |
+
+One warm request took 8,281 ms, the only one over 5 s. I don't know why.
