@@ -164,10 +164,18 @@ they don't distort it.
 
 **Why this target:**
 Each prompt carries 8 retrieved chunks of about 317 characters, roughly 1,000
-input tokens, plus a short answer of about 100 output tokens. Even at a
-pessimistic price that comes to well under a quarter of a cent, so $0.002
+input tokens, plus a short answer of about 100 output tokens. At the recorded
+price (see the note below) that comes to about $0.00055 per question, so $0.002
 leaves headroom for longer answers while still catching a prompt that has
 grown. Computed from reported usage, not estimated.
+
+> **Price recorded (2026-11-14), not a change to the target:** model
+> `gemini-3.5-flash-lite`, standard tier, $0.30 per 1M input tokens and $2.50
+> per 1M output tokens (thinking tokens are billed as output, so cost uses
+> output + thinking tokens). Source: ai.google.dev/gemini-api/docs/pricing.
+> At ~1,000 input and ~100 output tokens that is about $0.00055 per question,
+> so $0.002 leaves roughly 3.5x headroom — deliberate, to absorb longer answers
+> and thinking tokens while still catching a prompt that has grown.
 
 ## C4. A clean checkout runs from RUNNING.md alone
 
