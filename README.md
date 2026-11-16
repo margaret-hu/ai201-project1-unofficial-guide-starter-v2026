@@ -291,6 +291,16 @@ I stopped rather than edit the source document, since rewriting the corpus to ma
 
 # Unit 9
 
+## What This Extends
+
+This extends the Unofficial Guide RAG system I built in units 1 and 2 (the
+`campus_life` corpus: chunking, Chroma retrieval, the 0.63 relevance gate and the
+grounded Gemini prompt in `app.py::ask_pipeline`). What's new is the layer around
+it, all in `serve.py` and `generate.py`: a per-request JSONL log, per-call token
+usage from the Gemini response, a switchable forced-failure hook, an analysis
+script (`analyze_log.py`), a driver (`capstone_test.py`) and a Capstone section in
+`RUNNING.md`. The pipeline's behavior is unchanged.
+
 ## The Shape
 
 Shape A (deploy and instrument), Path B (run locally, with logs). I'm adding an
@@ -318,6 +328,15 @@ computation: I'd log raw token counts only and compute cost later in
   pipeline stays as it is. The housing-lottery gap from unit 2 stays a known gap.
 - **No dashboard, metrics server, or log aggregation.** The log is a JSONL file I
   read with a short script. No new interface either.
+
+## Running It
+
+Path B: it runs locally on my machine with `python serve.py` (port 5000), writing
+`logs/requests.jsonl`. It is not deployed. The full clone-to-first-answer
+procedure is the **Capstone** section of `RUNNING.md`, and the settings used for
+the test runs (`AI201_CACHE=0`, `AI201_ALLOW_FORCE_FAIL=1`, `AI201_LOG`) are in the
+table at the end of that section. The test driver is `capstone_test.py` (modes
+`c1`, `c2`, `c5`) and the log reader is `analyze_log.py`.
 
 ## Instrumentation
 
