@@ -402,3 +402,118 @@ rounds to the same arithmetic.
 Note that the latency row above is from an earlier session. The three official
 runs below, made later with no code changes, measured a warm p95 of 5981, 8671 and
 8223 ms, so the 2052 ms figure does not hold up (see C2 below).
+
+## Run Log and Verdicts
+
+Three separate runs, nothing changed between them. Each mode (C1, C2/C3, C5)
+started `serve.py` fresh with `AI201_CACHE=0` and `AI201_ALLOW_FORCE_FAIL=1`, and
+wrote its own log, so the first request was always the cold one. Raw output for
+every run is in `results/capstone_run1/` to `capstone_run3/`. The real output
+below is from Run 1: log files are `logs/capstone_<mode>_run1.jsonl`, and the
+analyzer and driver output is in `results/capstone_run1/`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| C1. Every request leaves one complete log record | 20 of 20 | 20/20 | 20/20 | 20/20 | MET |
+| C2. Warm p95 latency under 5 s (20 warm, non-cached) | p95 < 5000 ms | 5981 ms | 8671 ms | 8223 ms | MISSED |
+| C3. Mean cost per answered question under $0.002 | < $0.002 | $0.00038 | $0.00038 | $0.00038 | MET |
+| C4. Clean checkout runs from RUNNING.md alone | first attempt, each time | pass (HTTP 200) | pass (HTTP 200) | pass (HTTP 200) | MET |
+| C5. Gate holds through `POST /ask` | 5 of 5, each of 3 trials | 5/5, 5/5, 5/5 | 5/5, 5/5, 5/5 | 5/5, 5/5, 5/5 | MET |
+
+**C1.** Every request is logged by `serve.py::ask` (record written in its
+`finally` block by `serve.py::write_log`); records are counted by
+`analyze_log.py::main`, on requests sent by `capstone_test.py::c1`.
+`results/capstone_run1/analyze_c1.txt`:
+
+```
+C1  one complete record per request (target 20 of 20)
+    records: 20  unparseable lines: 0  duplicate timestamps: 0  statuses: {200: 18, 400: 1, 500: 1}
+    -> MET
+```
+
+From `logs/capstone_c1_run1.jsonl`: the empty question (record 6, 400) and the
+forced failure (record 10, 500). A refusal record is shown under C5.
+
+```
+{"timestamp": "2026-11-16T05:17:47.186189+00:00", "question": "", "answer": null, "error": "empty question", "refused": null, "sources": null, "latency_ms": 1.3, "status": 400, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": null}
+{"timestamp": "2026-11-16T05:17:56.213254+00:00", "question": "forced failure test", "answer": null, "error": "RuntimeError: forced failure (X-Force-Failure)", "refused": null, "sources": null, "latency_ms": 0.2, "status": 500, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": null}
+```
+
+**C2.** `latency_ms` is measured in `serve.py::ask` around the whole request; p95
+(nearest-rank) is computed by `analyze_log.py::p95` over warm, non-cached answered
+records, excluding the first (cold) one. `results/capstone_run1/analyze_c2.txt`
+(the C1 section it also prints is meaningless for this log, which has no 400 or
+500 by design):
+
+```
+C2  warm p95 latency under 5000 ms
+    n=20  p95=5981 ms  max=6580 ms  mean=2464 ms
+    -> NOT MET
+```
+
+A slow warm record from `logs/capstone_c2_run1.jsonl` (record 2, 5671.8 ms):
+
+```
+{"timestamp": "2026-11-16T05:19:07.810663+00:00", "question": "Does the library stay open later during term or during reading week?", "answer": "The library stays open later during term, closing at 2am compared to 10pm during reading week. \n\nSource: *study_library_hours.txt*", "error": null, "refused": false, "sources": ["admin_library_holds.txt", "housing_calder_annexe_noise.txt", "housing_morrow_house_noise.txt", "money_jobs.txt", "money_textbooks.txt", "orientation_what_matters.txt", "study_group_rooms.txt", "study_library_hours.txt"], "latency_ms": 5671.8, "status": 200, "cache_hit": false, "prompt_tokens": 847, "output_tokens": 36, "thinking_tokens": 0, "best_distance": 0.4392}
+```
+
+**C3.** Token counts come from the Gemini response via `generate.py` and are
+logged by `serve.py::ask`; cost is computed by `analyze_log.py::cost`.
+`results/capstone_run1/analyze_c2.txt`:
+
+```
+C3  mean cost per answered question under $0.002
+    n=20  mean=$0.00038  max=$0.00047  thinking tokens total=0
+    -> MET
+```
+
+**C5.** Requests sent by `capstone_test.py::c5` (3 trials × 5 `OUT_OF_SCOPE`
+questions); the refusal is decided in `app.py::ask_pipeline` and returned by
+`serve.py::ask`. `results/capstone_run1/driver_c5.txt`:
+
+```
+trial 1: 5 of 5 refused
+trial 2: 5 of 5 refused
+trial 3: 5 of 5 refused
+C5: MET
+```
+
+From `logs/capstone_c5_run1.jsonl` (record 1):
+
+```
+{"timestamp": "2026-11-16T05:20:50.884575+00:00", "question": "What is the capital of Mongolia?", "answer": "I don't have enough information about that.", "error": null, "refused": true, "sources": [], "latency_ms": 1004.7, "status": 200, "cache_hit": null, "prompt_tokens": null, "output_tokens": null, "thinking_tokens": null, "best_distance": 0.8246}
+```
+
+**C4.** Each attempt was a new `git clone` of this repo into an empty directory,
+then only the Capstone steps of `RUNNING.md` in order (venv, `pip install -r
+requirements.txt`, `.env` with my key, `python app.py index`, `python serve.py`,
+then the health and ask calls). Every attempt used an empty home directory, so the
+~80 MB embedding model downloaded for real each time. Each ran at commit 0060110,
+and each took 879–996 s, of which `pip install` was about 11 minutes. No step
+needed anything from outside the document. Driven by a PowerShell script of mine
+(not in the repo); full output is in `results/capstone_c4_attempt1.txt` to
+`attempt3.txt`. Attempt 1:
+
+```
+=== STEP: 4 build index
+  stored   88 chunks in 28.5s
+Ready. Try: python app.py ask "your question here"
+
+=== STEP: 6 health + ask
+{"corpus":"campus_life","detail":"ready","index_ready":true,"status":"ok"}
+HTTP 200
+```
+
+The answer field was non-empty each time. In attempts 1 and 3 it began "The housing
+lottery is not entirely random in the way most people assume" and cited
+`admin_housing_lottery.txt`; attempt 2 began "According to `admin_housing_lottery.txt`, ...".
+
+**C2, the miss: stage and mechanism.** The slow stage is the hosted-model call.
+Refused questions skip the model and averaged 250–360 ms through the same HTTP
+path, so embedding, retrieval and the gate are fast. Warm latencies split into a
+fast group (about 1–3 s) and a slow group (about 4–9 s), and prompt and answer size
+don't predict which a request lands in (847–980 prompt tokens, 21–72 output tokens
+in both). No rate-limit or retry message appears in any server log. What I can't
+tell is why the call is sometimes about five times slower: the log holds only
+end-to-end time, so the call itself was never timed on its own.
+

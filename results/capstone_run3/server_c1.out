@@ -1,0 +1,38 @@
+Serving The Unofficial Guide on http://localhost:5000
+Corpus: campus_life    (Ctrl-C to stop)
+
+Try it from another terminal:
+
+  curl http://localhost:5000/health
+  curl -X POST http://localhost:5000/ask \
+    -H 'Content-Type: application/json' \
+    -d '{"question": "is the housing lottery random?"}'
+
+ * Serving Flask app 'serve'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.14:5000
+Press CTRL+C to quit
+127.0.0.1 - - [15/Nov/2026 21:26:48] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:26:56] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:06] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:10] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:13] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:15] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:17] "POST /ask HTTP/1.1" 400 -
+127.0.0.1 - - [15/Nov/2026 21:27:19] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:22] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:24] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:26] "POST /ask HTTP/1.1" 500 -
+127.0.0.1 - - [15/Nov/2026 21:27:36] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:45] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:48] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:51] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:27:54] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:28:05] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:28:15] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:28:26] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:28:29] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 21:28:33] "POST /ask HTTP/1.1" 200 -

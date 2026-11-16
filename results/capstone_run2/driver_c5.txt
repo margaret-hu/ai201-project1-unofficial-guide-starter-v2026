@@ -1,0 +1,4 @@
+trial 1: 5 of 5 refused
+trial 2: 5 of 5 refused
+trial 3: 5 of 5 refused
+C5: MET
