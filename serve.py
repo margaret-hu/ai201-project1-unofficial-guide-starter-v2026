@@ -24,7 +24,7 @@ Capstone: every POST /ask writes exactly one JSONL record to the request log
 (default logs/requests.jsonl, override with AI201_LOG) — answered, refused,
 400 and 500 alike. Fields: timestamp, question, answer, error, refused,
 sources, latency_ms, status, cache_hit, prompt_tokens, output_tokens,
-thinking_tokens, best_distance. Keys are always present; a field that doesn't apply is null.
+thinking_tokens, best_distance, model_call_ms, attempts, generate_ms. Keys are always present; a field that doesn't apply is null.
 """
 
 import json
@@ -111,6 +111,9 @@ def ask():
         "output_tokens": None,
         "thinking_tokens": None,
         "best_distance": None,
+        "model_call_ms": None,  # the successful generate_content call alone; null if no model call
+        "attempts": None,       # model attempts for this request (1 = no retry)
+        "generate_ms": None,    # all of generate.py: limiter sleep + retries + backoff + the call
     }
     try:
         payload = request.get_json(silent=True) or {}
@@ -155,6 +158,9 @@ def ask():
             prompt_tokens=usage.get("prompt_tokens"),
             output_tokens=usage.get("output_tokens"),
             thinking_tokens=usage.get("thinking_tokens"),
+            model_call_ms=usage.get("model_call_ms"),
+            attempts=usage.get("attempts"),
+            generate_ms=usage.get("generate_ms"),
         )
         return jsonify(
             {

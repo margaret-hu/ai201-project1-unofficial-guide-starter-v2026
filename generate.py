@@ -217,7 +217,8 @@ def generate_with_usage(
     Send a prompt and get (text, usage) back.
 
     `usage` is this one call's own numbers, not session totals:
-    {"prompt_tokens", "output_tokens", "thinking_tokens": int, "cache_hit": bool}.
+    {"prompt_tokens", "output_tokens", "thinking_tokens": int, "cache_hit": bool,
+    "model_call_ms": float (only on a real call; a retry reports the last attempt)}.
     Thinking tokens are billed as output.
     Token counts are read off the response; a cache hit reports 0 and
     cache_hit=True, since it never reached the service.
@@ -250,6 +251,7 @@ def generate_with_usage(
 
     _check_budget()
 
+    _t_generate = time.perf_counter()  # whole call: limiter sleep, retries, backoff
     last_error: Exception | None = None
     for attempt in range(config.MAX_RETRIES):
         _wait_for_slot()
@@ -262,7 +264,9 @@ def generate_with_usage(
             if system:
                 kwargs["config"] = {"system_instruction": system}
 
+            _t_call = time.perf_counter()
             response = client.models.generate_content(**kwargs)
+            model_call_ms = round((time.perf_counter() - _t_call) * 1000, 1)
             prompt_tokens, output_tokens, thinking_tokens = _record_tokens(response)
             text = (response.text or "").strip()
 
@@ -273,6 +277,9 @@ def generate_with_usage(
                 "output_tokens": output_tokens,
                 "thinking_tokens": thinking_tokens,
                 "cache_hit": False,
+                "model_call_ms": model_call_ms,  # the successful generate_content call alone
+                "attempts": attempt + 1,  # 1 = no retry
+                "generate_ms": round((time.perf_counter() - _t_generate) * 1000, 1),
             }
 
         except Exception as exc:  # noqa: BLE001 — surfaced below

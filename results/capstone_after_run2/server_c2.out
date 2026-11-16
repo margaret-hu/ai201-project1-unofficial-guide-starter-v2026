@@ -1,0 +1,43 @@
+Serving The Unofficial Guide on http://localhost:5000
+Corpus: campus_life    (Ctrl-C to stop)
+
+Try it from another terminal:
+
+  curl http://localhost:5000/health
+  curl -X POST http://localhost:5000/ask \
+    -H 'Content-Type: application/json' \
+    -d '{"question": "is the housing lottery random?"}'
+
+ * Serving Flask app 'serve'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.14:5000
+Press CTRL+C to quit
+127.0.0.1 - - [15/Nov/2026 23:56:13] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:21] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:24] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:27] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:30] "POST /ask HTTP/1.1" 200 -
+  [rate limit] service pushed back. Retrying in 1s (attempt 1 of 4).
+  [rate limit] service pushed back. Retrying in 2s (attempt 2 of 4).
+127.0.0.1 - - [15/Nov/2026 23:56:36] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:39] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:42] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:45] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:47] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:50] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:53] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:56:56] "POST /ask HTTP/1.1" 200 -
+  [rate limit] 14 requests used this minute. Waiting 22s. This is normal.
+127.0.0.1 - - [15/Nov/2026 23:57:21] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:24] "POST /ask HTTP/1.1" 200 -
+  [rate limit] 14 requests used this minute. Waiting 0s. This is normal.
+127.0.0.1 - - [15/Nov/2026 23:57:27] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:30] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:33] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:36] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:39] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:42] "POST /ask HTTP/1.1" 200 -
+127.0.0.1 - - [15/Nov/2026 23:57:45] "POST /ask HTTP/1.1" 200 -

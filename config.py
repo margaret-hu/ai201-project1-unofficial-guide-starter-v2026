@@ -65,7 +65,7 @@ MODEL = os.getenv("AI201_MODEL", "gemini-3.5-flash-lite")
 # You should not need to touch these. They exist so that a runaway loop costs
 # you a warning instead of your whole day's allowance.
 
-REQUESTS_PER_MINUTE = 30       # outgoing calls the limiter will allow per minute
+REQUESTS_PER_MINUTE = 14       # free tier allows 15/min for gemini-3.5-flash-lite; stay one under (was 30)
 SESSION_REQUEST_BUDGET = 300   # stop and warn rather than draining the daily quota
 MAX_RETRIES = 4                # on 429 / resource-exhausted, with backoff
 

@@ -1,0 +1,17 @@
+C1  one complete record per request (target 20 of 20)
+    records: 21  unparseable lines: 0  duplicate timestamps: 0  statuses: {200: 21}
+    -> NOT MET  (log has no 400 or no 500 — the test needs both)
+
+Population: first record excluded as cold; 20 answered non-cached, 0 refused, 0 cached (excluded)
+
+C2  warm p95 latency under 5000 ms
+    n=20  p95=4006 ms  max=23122 ms  mean=2115 ms
+    -> MET
+    model call alone: n=20  p95=926 ms  max=959 ms  mean=683 ms  (32% of total latency)
+    everything else:  p95=3418 ms  max=22450 ms
+    generate.py total: p95=3892 ms  max=23022 ms; retrieval+gate+rest: p95=234 ms  max=238 ms
+    requests that needed a retry: 1 of 20
+
+C3  mean cost per answered question under $0.002
+    n=20  mean=$0.00038  max=$0.00044  thinking tokens total=0
+    -> MET

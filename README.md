@@ -362,6 +362,12 @@ with `…`); every other field is as logged.
 {"timestamp": "2026-11-15T07:15:44.386484+00:00", "question": "Does the library stay open later during term or during reading week?", "answer": "Based on the documents, the library stays open later during term (until 2am) than during reading week (until 1…", "error": null, "refused": false, "sources": ["admin_library_holds.txt", "housing_calder_annexe_noise.txt", "housing_morrow_house_noise.txt", "money_jobs.txt", "money_textbooks.txt", "orientation_what_matters.txt", "study_group_rooms.txt", "study_library_hours.txt"], "latency_ms": 744.1, "status": 200, "cache_hit": false, "prompt_tokens": 847, "output_tokens": 72, "thinking_tokens": 0, "best_distance": 0.4392}
 ```
 
+**Fields added after the three runs.** Records from the later timing sessions also
+carry `model_call_ms` (the successful `generate_content` call alone), `attempts`
+(1 means no retry) and `generate_ms` (all of `generate.py`: limiter sleep, retries,
+backoff and the call). The records pasted above and the three official runs predate
+them.
+
 **Failed runs.** Both left a record rather than an absence:
 
 - Record 6, status `400`: the empty question was rejected before the pipeline ran.
@@ -508,12 +514,77 @@ The answer field was non-empty each time. In attempts 1 and 3 it began "The hous
 lottery is not entirely random in the way most people assume" and cited
 `admin_housing_lottery.txt`; attempt 2 began "According to `admin_housing_lottery.txt`, ...".
 
-**C2, the miss: stage and mechanism.** The slow stage is the hosted-model call.
-Refused questions skip the model and averaged 250–360 ms through the same HTTP
-path, so embedding, retrieval and the gate are fast. Warm latencies split into a
-fast group (about 1–3 s) and a slow group (about 4–9 s), and prompt and answer size
-don't predict which a request lands in (847–980 prompt tokens, 21–72 output tokens
-in both). No rate-limit or retry message appears in any server log. What I can't
-tell is why the call is sometimes about five times slower: the log holds only
-end-to-end time, so the call itself was never timed on its own.
+**C2, the miss: stage and mechanism.** Two things are established and one is not.
+
+- *Not retrieval or my code.* After the three runs I added timing to the log
+  (`model_call_ms`, `attempts`, `generate_ms`; see Instrumentation). In four later
+  sessions of the same C2 test, everything outside `generate.py` (embedding, search,
+  gate, Flask) took at most 422 ms, and the model call was 82–85% of the total
+  latency in the clean sessions (`results/timing/`).
+- *One cause of slow requests is the free-tier rate limit.* In two of those sessions
+  the service answered 429: "Generate content requests per minute limit exceeded on
+  Free Tier ... limit: 15". `config.py` had `REQUESTS_PER_MINUTE = 30` (changed to 14
+  in The Improvement, below), twice the real limit, so the local limiter never slows the burst and `generate.py` retries with
+  1 s / 2 s / 4 s backoff instead. Those retried requests took about 3.5–4 s while the
+  successful call itself took about 0.5 s, and in session 2 one request failed
+  outright with a 500 after 15.7 s.
+- *Not established: why the official runs were slow.* They sent only 10–15 requests in
+  any 60 s window, logged no rate-limit message, and still had 4, 10 and 14 warm
+  requests over 3 s. So the rate limit does not explain them. The non-model stages
+  were never slower than about 0.4 s in the later sessions, so the model call itself
+  is the likely place, but the official runs predate the timing fields and I did not
+  measure it there. Four later sessions measured p95 of 4012, 1077, 1944 and 1490 ms,
+  so the tail comes and goes with the hosted service.
+
+## The Improvement
+
+**The change (one).** In `config.py`, `REQUESTS_PER_MINUTE` from 30 to 14. **Why:**
+the C2 diagnosis found the free tier allows 15 model calls a minute but my local
+limiter allowed 30, so a burst never waited locally and instead drew 429s that
+`generate.py` retried with 1 s / 2 s / 4 s backoff (and, once, failed with a 500).
+At 14 the limiter waits on purpose before the service has to push back. Nothing
+else changed: the same targets, the same test drivers, the same burst of 20 warm
+requests, three runs each on a fresh server.
+
+**Before and after, side by side.** "Before" is the three runs above; "after" is
+three new runs of the same test (`results/capstone_after_run1/` to `run3/`,
+`logs/capstone_after_*_run*.jsonl`).
+
+| Criterion | Target | Before 1 / 2 / 3 | Before | After 1 / 2 / 3 | After |
+|---|---|---|---|---|---|
+| C1. Every request leaves one complete log record | 20 of 20 | 20 / 20 / 20 | MET | 20 / 20 / 20 | MET |
+| C2. Warm p95 latency under 5 s | p95 < 5000 ms | 5981 / 8671 / 8223 ms | MISSED | 1346 / 4006 / 2174 ms | MET |
+| C3. Mean cost per answered question under $0.002 | < $0.002 | $0.00038 / $0.00038 / $0.00038 | MET | $0.00037 / $0.00038 / $0.00038 | MET |
+| C4. Clean checkout runs from RUNNING.md alone | first attempt | pass / pass / pass | MET | not re-run | n/a |
+| C5. Gate holds through `POST /ask` | 5 of 5, each of 3 trials | 3 trials of 5/5 in each run | MET | 3 trials of 5/5 in each run | MET |
+
+Other C2 numbers, same sessions (p95 is in the table above):
+
+| | Before 1 / 2 / 3 | After 1 / 2 / 3 |
+|---|---|---|
+| Warm max | 6580 / 8838 / 8720 ms | **20256 / 23122 / 16394 ms** |
+| Requests that needed a 429 retry | not logged | 0 / 1 / 0 |
+
+**Did it help? Partly, and I can't claim the credit for the C2 pass.**
+
+- *What it fixed:* the retry-and-fail behavior. Across the 60 warm requests in the
+  three after-runs, one needed a 429 retry (run 2, which took 4006 ms) and none
+  failed with a 500. C1, C3 and C5 stayed MET with the same numbers.
+- *What it made worse:* the worst single request. The limiter now sleeps when a
+  burst passes 14 calls in a minute, so each after-session had one warm request that
+  took 16–23 s (the maximum row). p95 doesn't show that: with 20 samples the
+  nearest-rank p95 is the 19th value, so one outlier per session is invisible to the
+  criterion as written. The C2 verdict is MET, but a user hitting that request would
+  not call it fast.
+- *Why I can't say the change caused the C2 pass:* before I made the change, two
+  timing sessions (3 and 4) with the old limiter of 30 already measured a p95 of
+  1944 and 1490 ms (`results/timing/`). The slow tail in the official before-runs
+  had no retries in it, so a change to retry behavior could not have removed it. The
+  tail comes and goes with the hosted service, and the after-runs landed in a good
+  period. The honest reading is: the change removed one real failure mode and
+  traded it for a deliberate 16–23 s wait; it did not demonstrably cure the slow
+  tail that missed C2.
+- *C4 was not re-run.* The change touches `config.py` only, not the install, index
+  or start steps, and re-running it needs the change pushed so a clone can see it.
+  I haven't pushed it.
 
