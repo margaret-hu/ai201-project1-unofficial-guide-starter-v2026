@@ -391,3 +391,14 @@ from the pricing page. I did not read a dollar figure off a bill.
 | Cost per answered question | 20 | $0.00037 | | $0.00042 |
 
 One warm request took 8,281 ms, the only one over 5 s. I don't know why.
+
+**At a hundred questions a day.** Using the measured $0.00037 per answered
+question: 100 × $0.00037 = **$0.037 a day**, or about **$1.11 over 30 days**. Even
+at the worst single answer I measured ($0.00047), that is $0.047 a day. This
+assumes every question is answered; refused questions cost nothing, so real
+traffic would cost less. The three test runs below measured $0.00038 each, which
+rounds to the same arithmetic.
+
+Note that the latency row above is from an earlier session. The three official
+runs below, made later with no code changes, measured a warm p95 of 5981, 8671 and
+8223 ms, so the 2052 ms figure does not hold up (see C2 below).
