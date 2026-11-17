@@ -113,20 +113,21 @@ def main():
         print(f"    n={len(lat)}  p95={v:.0f} ms  max={max(lat):.0f} ms  "
               f"mean={sum(lat)/len(lat):.0f} ms{note}")
         print(f"    -> {'MET' if v < 5000 else 'NOT MET'}")
-        mc = [r["model_call_ms"] for r in answered if r.get("model_call_ms") is not None]
-        if mc:
-            share = sum(mc) / sum(lat[:len(answered)]) if lat else 0
-            outside = [r["latency_ms"] - r["model_call_ms"] for r in answered
-                       if r.get("model_call_ms") is not None]
+        # Timing fields only exist on later records, so filter to those that have them.
+        timed = [r for r in answered if r.get("model_call_ms") is not None]
+        if timed:
+            mc = [r["model_call_ms"] for r in timed]
+            share = sum(mc) / sum(r["latency_ms"] for r in timed)
+            outside = [r["latency_ms"] - r["model_call_ms"] for r in timed]
             print(f"    model call alone: n={len(mc)}  p95={p95(mc):.0f} ms  max={max(mc):.0f} ms  "
                   f"mean={sum(mc)/len(mc):.0f} ms  ({share:.0%} of total latency)")
             print(f"    everything else:  p95={p95(outside):.0f} ms  max={max(outside):.0f} ms")
         gen = [r for r in answered if r.get("generate_ms") is not None]
         if gen:
             retried = [r for r in gen if (r.get("attempts") or 1) > 1]
+            gen_ms = [r["generate_ms"] for r in gen]
             outside_gen = [r["latency_ms"] - r["generate_ms"] for r in gen]
-            print(f"    generate.py total: p95={p95([r['generate_ms'] for r in gen]):.0f} ms  "
-                  f"max={max(r['generate_ms'] for r in gen):.0f} ms; "
+            print(f"    generate.py total: p95={p95(gen_ms):.0f} ms  max={max(gen_ms):.0f} ms; "
                   f"retrieval+gate+rest: p95={p95(outside_gen):.0f} ms  max={max(outside_gen):.0f} ms")
             print(f"    requests that needed a retry: {len(retried)} of {len(gen)}")
     else:
