@@ -518,6 +518,10 @@ lottery is not entirely random in the way most people assume" and cited
 
 **C2, the miss: stage and mechanism.** Two things are established and one is not.
 
+**Boundary.** This covers only the four later timing sessions (the only ones with
+timing fields). It doesn't explain the three official runs, why the hosted model is
+sometimes slow, or anything beyond one machine on the free tier.
+
 - *Not retrieval or my code.* After the three runs I added timing to the log
   (`model_call_ms`, `attempts`, `generate_ms`; see Instrumentation). In four later
   sessions of the same C2 test, everything outside `generate.py` (embedding, search,

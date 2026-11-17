@@ -234,7 +234,8 @@ version is described in the Capstone section below.
    cd unofficial-guide
    ```
 
-2. **Create the environment and install dependencies**
+2. **Create the environment and install dependencies.** Python 3.11, 3.12 or 3.13
+   (not 3.14); I ran it on 3.12.10.
 
    ```powershell
    python -m venv .venv
