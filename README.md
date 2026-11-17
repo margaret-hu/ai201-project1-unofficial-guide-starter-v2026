@@ -587,3 +587,43 @@ Other C2 numbers, same sessions (p95 is in the table above):
   non-empty answer, in 673–772 s (`results/capstone_c4_rerun1.txt` to
   `rerun3.txt`, which record the commit tested). The change touches `config.py`
   only, so this is a regression check, and there was no regression.
+
+## What's Still Broken
+
+- **C2 (met after the change, not understood).** p95 is under 5 s in all three
+  after-runs, but see above for why that isn't credit to the change. First thing I'd do: run the 20-request
+  test five more times on each limiter setting (30 and 14), alternating, so the
+  comparison isn't between two different times of day. I stopped because that is
+  the experiment that separates my change from the service's good and bad periods,
+  and it needs more calls against a 15-a-minute quota than I wanted to spend.
+- **If I tightened a target.** Everything except C2 was met, and two targets are
+  loose: C3 is $0.002 against a measured $0.00038 (about 5× headroom), so I'd tighten
+  it to $0.0005, which the measured mean and max ($0.00047) would still clear. For C2
+  I'd keep the p95 line and add "no warm request over 10 s", because p95 over 20
+  samples cannot see a single 16–23 s wait. These are additions for next time, not
+  edits to the criteria above.
+- **C4 passed 3 of 3, twice** (before the change, and again after it),
+  but the first request after start is slow (12.4 s in attempt 1, cold, before the
+  change; 5.5–18.4 s in the re-run) and the install takes 6–11 minutes. That is not
+  a miss, only something a new reader should expect.
+- **What It Costs** quotes a 2052 ms warm p95 from an earlier session that the
+  three official runs don't reproduce. Don't rely on it.
+
+## How I Used AI
+
+**1.** I proposed a 15 s warm p95 (C2) and $0.01 per answer (C3) and asked Claude
+if they would work. It called both too easy and suggested 5 s and $0.002, and told
+me to exclude cached responses from both. I took its numbers. C3 had about 5x
+headroom (measured $0.00038). C2 was missed (p95 5981, 8671, 8223 ms): its 1-3 s
+estimate fit typical requests, not the slow group. I kept the targets and
+diagnosed the miss.
+
+**2.** After the C2 miss I told Claude to start by timing the model call, since I
+had written that it was the slow stage but had only inferred it. Claude added a
+`model_call_ms` timer and ran 21 requests. The model call never took over 916 ms,
+even on requests that took 3.5–4 s, which contradicted my claim. The server log
+showed the missing time was 429 retries: `config.py` allowed 30 requests a minute
+and the free tier allows 15. I had it add `attempts` and `generate_ms` to measure
+retries and backoff, ran three more sessions, and rewrote the C2 paragraph to say
+what was established (retries cause some slow requests) and what wasn't (why the
+official runs, which had no retries, were slow).
