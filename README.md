@@ -555,7 +555,7 @@ three new runs of the same test (`results/capstone_after_run1/` to `run3/`,
 | C1. Every request leaves one complete log record | 20 of 20 | 20 / 20 / 20 | MET | 20 / 20 / 20 | MET |
 | C2. Warm p95 latency under 5 s | p95 < 5000 ms | 5981 / 8671 / 8223 ms | MISSED | 1346 / 4006 / 2174 ms | MET |
 | C3. Mean cost per answered question under $0.002 | < $0.002 | $0.00038 / $0.00038 / $0.00038 | MET | $0.00037 / $0.00038 / $0.00038 | MET |
-| C4. Clean checkout runs from RUNNING.md alone | first attempt | pass / pass / pass | MET | not re-run | n/a |
+| C4. Clean checkout runs from RUNNING.md alone | first attempt | pass / pass / pass | MET | pass / pass / pass | MET |
 | C5. Gate holds through `POST /ask` | 5 of 5, each of 3 trials | 3 trials of 5/5 in each run | MET | 3 trials of 5/5 in each run | MET |
 
 Other C2 numbers, same sessions (p95 is in the table above):
@@ -581,10 +581,9 @@ Other C2 numbers, same sessions (p95 is in the table above):
   1944 and 1490 ms (`results/timing/`). The slow tail in the official before-runs
   had no retries in it, so a change to retry behavior could not have removed it. The
   tail comes and goes with the hosted service, and the after-runs landed in a good
-  period. The honest reading is: the change removed one real failure mode and
-  traded it for a deliberate 16–23 s wait; it did not demonstrably cure the slow
-  tail that missed C2.
-- *C4 was not re-run.* The change touches `config.py` only, not the install, index
-  or start steps, and re-running it needs the change pushed so a clone can see it.
-  I haven't pushed it.
-
+  period.
+- *C4 was re-run after pushing the change, and passed 3 of 3.* Three new clean
+  clones at f09a70d each built the index and returned HTTP 200 with a non-empty
+  answer, in 673–772 s (`results/capstone_c4_rerun1.txt` to `rerun3.txt`). The
+  change touches `config.py` only, so this is a regression check, and there was no
+  regression.

@@ -1,0 +1,56 @@
+C4 attempt 3 started 2026-11-16T01:25:37.8072549-08:00
+
+=== STEP: 1 clone  (0s elapsed)
+git : Cloning into 'unofficial-guide'...
+At C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun.ps1:22 char:18
++ ... "1 clone" { git clone https://github.com/margaret-hu/ai201-project1-u ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Cloning into 'unofficial-guide'...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+HEAD: f09a70d
+
+
+=== STEP: 2 venv + install  (1s elapsed)
+pip : 
+At C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun.ps1:24 char:81
++ ... nv\Scripts\Activate.ps1; pip install -r requirements.txt 2>&1 | Selec ...
++                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[notice] A new release of pip is available: 25.0.1 -> 26.3
+[notice] To update, run: python.exe -m pip install --upgrade pip
+
+
+=== STEP: 3 add key (copied from my .env; contents not printed)  (381s elapsed)
+wrote .env (1324 bytes)
+
+
+=== STEP: 4 build index  (381s elapsed)
+C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun3\home\.cache\chroma\onnx_models\all-MiniLM-L6-v2\onnx.tar.gz:  96%|█████████▌| 75.9M/79.3M [00:08<00:00, 8.93MiB/s]
+C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun3\home\.cache\chroma\onnx_models\all-MiniLM-L6-v2\onnx.tar.gz:  97%|█████████▋| 76.9M/79.3M [00:08<00:00, 9.34MiB/s]
+C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun3\home\.cache\chroma\onnx_models\all-MiniLM-L6-v2\onnx.tar.gz:  98%|█████████▊| 77.8M/79.3M [00:08<00:00, 7.94MiB/s]
+C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun3\home\.cache\chroma\onnx_models\all-MiniLM-L6-v2\onnx.tar.gz: 100%|█████████▉| 79.0M/79.3M [00:08<00:00, 8.94MiB/s]
+C:\Users\marga\AppData\Local\Temp\claude\4d269ffcd7ca024c\b9c7dd8c-6330-45be-9583-937001a33429\scratchpad\c4_rerun3\home\.cache\chroma\onnx_models\all-MiniLM-L6-v2\onnx.tar.gz: 100%|██████████| 79.3M/79.3M [00:08<00:00, 9.26MiB/s]
+  stored   88 chunks in 19.0s
+
+Ready. Try: python app.py ask "your question here"
+
+
+=== STEP: 5 start service
+
+=== STEP: 6 health + ask  (682s elapsed)
+{"corpus":"campus_life","detail":"ready","index_ready":true,"status":"ok"}
+
+--- ask:
+{"answer":"The housing lottery is not entirely random in the way most people assume: rising sophomores get a number drawn at random, but juniors and seniors are ordered by accumulated credit hours first, and only tie-break randomly. \nSource: `admin_housing_lottery.txt`","best_distance":0.2541,"corpus":"campus_life","question":"is the housing lottery random?","refused":false,"sources":["admin_housing_lottery.txt","admin_parking_permits.txt","advising_registration.txt","dining_the_atrium_followup.txt","housing_calder_annexe.txt","housing_innisfree_hall.txt","housing_morrow_house.txt","housing_tamsin_court.txt"],"threshold":0.63}
+
+HTTP 200
+
+
+=== STEP: 7 read log  (704s elapsed)
+{"timestamp": "2026-11-16T09:37:03.714228+00:00", "question": "is the housing lottery random?", "answer": "The housing lottery is not entirely random in the way most people assume: rising sophomores get a number drawn at random, but juniors and seniors are ordered by accumulated credit hours first, and only tie-break randomly. \nSource: `admin_housing_lottery.txt`", "error": null, "refused": false, "sources": ["admin_housing_lottery.txt", "admin_parking_permits.txt", "advising_registration.txt", "dining_the_atrium_followup.txt", "housing_calder_annexe.txt", "housing_innisfree_hall.txt", "housing_morrow_house.txt", "housing_tamsin_court.txt"], "latency_ms": 18418.3, "status": 200, "cache_hit": false, "prompt_tokens": 1051, "output_tokens": 57, "thinking_tokens": 0, "best_distance": 0.2541, "model_call_ms": 13254.9, "attempts": 1, "generate_ms": 17904.2}
+
+
+finished 2026-11-16T01:37:22.2210819-08:00, total 704s
