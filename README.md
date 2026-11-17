@@ -583,7 +583,7 @@ Other C2 numbers, same sessions (p95 is in the table above):
   tail comes and goes with the hosted service, and the after-runs landed in a good
   period.
 - *C4 was re-run after pushing the change, and passed 3 of 3.* Three new clean
-  clones at f09a70d each built the index and returned HTTP 200 with a non-empty
-  answer, in 673–772 s (`results/capstone_c4_rerun1.txt` to `rerun3.txt`). The
-  change touches `config.py` only, so this is a regression check, and there was no
-  regression.
+  clones of the pushed code each built the index and returned HTTP 200 with a
+  non-empty answer, in 673–772 s (`results/capstone_c4_rerun1.txt` to
+  `rerun3.txt`, which record the commit tested). The change touches `config.py`
+  only, so this is a regression check, and there was no regression.
