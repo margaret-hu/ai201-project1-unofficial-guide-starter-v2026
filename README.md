@@ -396,7 +396,9 @@ from the pricing page. I did not read a dollar figure off a bill.
 | Latency, warm | 20 | 1297 ms | 2052 ms | 8281 ms |
 | Cost per answered question | 20 | $0.00037 | | $0.00042 |
 
-One warm request took 8,281 ms, the only one over 5 s. I don't know why.
+One warm request took 8,281 ms, the only one over 5 s. I don't know why. This run
+predates the timing fields and the limiter was still at 30, so it wasn't a limiter
+sleep; a 429 retry (7 s of backoff) would fit, but I can't confirm it.
 
 **At a hundred questions a day.** Using the measured $0.00037 per answered
 question: 100 × $0.00037 = **$0.037 a day**, or about **$1.11 over 30 days**. Even
@@ -572,7 +574,8 @@ Other C2 numbers, same sessions (p95 is in the table above):
   failed with a 500. C1, C3 and C5 stayed MET with the same numbers.
 - *What it made worse:* the worst single request. The limiter now sleeps when a
   burst passes 14 calls in a minute, so each after-session had one warm request that
-  took 16–23 s (the maximum row). p95 doesn't show that: with 20 samples the
+  took 16–23 s (the maximum row; e.g. record 15 of `capstone_after_c2_run3.jsonl`:
+  16,394 ms total, 652 ms model call, 1 attempt). p95 doesn't show that: with 20 samples the
   nearest-rank p95 is the 19th value, so one outlier per session is invisible to the
   criterion as written. The C2 verdict is MET, but a user hitting that request would
   not call it fast.
